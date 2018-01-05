@@ -3,11 +3,20 @@ import os
 import blockcypher
 import requests
 
+from coinmarketcap import Market
+
 BITCOIN_BALANCE_URL = "https://blockexplorer.com/api/addr/"
 ETHER_BALANCE_URL = "https://api.etherscan.io/api"
 
 PHOTONS_TO_LITECOIN_MULTIPLIER = 10**8
 WEI_TO_ETHER_MULTIPLIER = 10**18
+
+
+COINS = {
+    BITCOIN: 'bitcoin',
+    ETHEREUM: 'ethereum',
+    LITECOIN: 'litecoin'
+}
 
 class Crypto(object):
     """
@@ -75,14 +84,43 @@ class Crypto(object):
         litecoin_balance = litecoin_balance / PHOTONS_TO_LITECOIN_MULTIPLIER
         return litecoin_balance
 
-    def _convert_to_usd():
-        pass
+    def _convert_to_usd(self, coin):
+        """
+        Returns USD representation of a coin's wallet balance
 
-    def get_bitcoin_in_usd():
-        pass
+        Args:
+            coin (str): Coin to get address balance of
+        Yields:
+            litecoin_balance: Litecoin balance
+        """
+        market = Market()
 
-    def get_ether_in_usd():
-        pass
+        if coin is COINS.BITCOIN:
+            bitcoin_price_usd = market.ticker(coin, convert='USD').get('price_usd')
+            return bitcoin_price_usd * self._get_bitcoin_balance()
+        else if COINS.ETHEREUM:
+            ethereum_price_usd = market.ticker(coin, convert='USD').get('price_usd')
+            return ethereum_price_usd * self._get_ether_balance()
+        else if COINS.LITECOIN:
+            litecoin_price_usd = market.ticker(coin, convert='USD').get('price_usd')
+            return litecoin_price_usd * self._get_litecoin_balance()
+        else:
+            raise 'Coin {coin} not supported'.format(coin=coin)
 
-    def get_litecoin_in_usd():
-        pass
+    def get_bitcoin_in_usd(self):
+        """
+        Get balance of the class' bitcoin balance in USD
+        """
+        return self._convert_to_usd(COINS.BITCOIN)
+
+    def get_ether_in_usd(self):
+        """
+        Get balance of the class' ether balance in USD
+        """
+        return self._convert_to_usd(COINS.ETHEREUM)
+
+    def get_litecoin_in_usd(self):
+        """
+        Get balance of the class' litecoin balance in USD
+        """
+        return self._convert_to_usd(COINS.LITECOIN)
