@@ -1,3 +1,5 @@
-blockcypher
-coinmarketcap
-requests
+blockcypher1.0.73
+coinmarketcap==4.1.1
+ipython==6.2.1
+personalcapital==1.0.1
+requests==2.4.3
