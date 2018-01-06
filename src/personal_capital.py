@@ -1,4 +1,4 @@
-import email, getpass, imaplib, os, re
+import email, getpass, imaplib, os, re, logging, json
 
 from personalcapital import PersonalCapital as PersonalCapitalClient
 from personalcapital import TwoFactorVerificationModeEnum
@@ -14,17 +14,25 @@ class PersonalCap(object):
         self.email_username = email_username
         self.email_password = email_password
 
+        self.session = None
+            
     def _login(self):
-        try:
-            self.client.login(username=self.pc_username, password=self.pc_password)
-        except:
-            self.client.two_factor_challenge(TwoFactorVerificationModeEnum.EMAIL)
+        if self.session:
+            self.client.set_session(self.session)
+            return
+        else:
+            try:
+                self.client.login(username=self.pc_username, password=self.pc_password)
+            except:
+                self.client.two_factor_challenge(TwoFactorVerificationModeEnum.EMAIL)
 
-            ## get 2FA code magic via SMS or email tbd.
-            code = self._get_code_from_email()
+                ## get 2FA code magic via SMS or email tbd.
+                code = self._get_code_from_email()
 
-            self.client.two_factor_authenticate(TwoFactorVerificationModeEnum.EMAIL, code)
-            self.client.authenticate_password(self.pc_password)
+                self.client.two_factor_authenticate(TwoFactorVerificationModeEnum.EMAIL, code)
+                self.client.authenticate_password(self.pc_password)
+            self.session = self.client.get_session()
+            self.client.set_session(self.session)
 
     def _get_code_from_email(self):
         mailbox = imaplib.IMAP4_SSL("imap.gmail.com")
@@ -36,7 +44,6 @@ class PersonalCap(object):
         latest_email_id = mail_ids_list[-1] # get the latest
         result, data = mailbox.fetch(latest_email_id, "(RFC822)") # fetch the email body (RFC822) for the given ID
         raw_email = str(data[0][1])
-
 
         code = re.search(TWOFA_CODE_REGEX, raw_email)[1].split()[0]
         return code
